@@ -4,7 +4,7 @@
 
 replicaCount: 1
 image:
-  repository: 925517157861.dkr.ecr.us-east-1.amazonaws.com/retail-store-catalog
+  repository: 925517157861.dkr.ecr.us-east-1.amazonaws.com/retail-store-sample-catalog
   pullPolicy: Always
   tag: "1.3.0"
 #imagePullSecrets:

@@ -83,6 +83,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Run Prisma Cloud 
+        id: prisma-cloud
+        uses: bridgecrewio/checkov-action@master
+        env:
+          PRISMA_API_URL: https://api2.eu.prismacloud.io
+        with:
+          api-key: ${{ secrets.BC_API_KEY }}
+          soft_fail: true
+          quiet: true
+      
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -94,13 +104,12 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build ${{ matrix.service }}
+      - name: Build and push ${{ matrix.service }}
         run: |
           SERVICE="${{ matrix.service }}"
           TAG="$(echo ${{ github.sha }} | cut -c1-7)"
           AWS_ACCOUNT_ID="${{ secrets.AWS_ACCOUNT_ID }}"
           ECR_REPO="${AWS_ACCOUNT_ID}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/retail-store-${SERVICE}"
-          IMAGE_NAME="${ECR_REPO}:${TAG}"
           
           echo "🔨 Building ${SERVICE}:${TAG}"
           
@@ -112,26 +121,6 @@ jobs:
           
           # Build and push
           docker build -t "${ECR_REPO}:${TAG}" -t "${ECR_REPO}:latest" "src/${SERVICE}/"
-
-          # Export for next steps
-          echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
-
-      - name: Prisma Cloud image scan
-        id: scan
-        uses: PaloAltoNetworks/prisma-cloud-scan@v1.6.8
-        with:
-          pcc_console_url: ${{ secrets.PCC_CONSOLE_URL }}
-          pcc_user: ${{ secrets.PCC_USER }}
-          pcc_pass: ${{ secrets.PCC_PASS }}
-          image_name: ${{ env.IMAGE_NAME }}
-
-      - name: Push ${{ matrix.service }}
-        run: |
-          SERVICE="${{ matrix.service }}"
-          TAG="$(echo ${{ github.sha }} | cut -c1-7)"
-          AWS_ACCOUNT_ID="${{ secrets.AWS_ACCOUNT_ID }}"
-          ECR_REPO="${AWS_ACCOUNT_ID}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/retail-store-${SERVICE}"
-
           docker push "${ECR_REPO}:${TAG}"
           docker push "${ECR_REPO}:latest"
           

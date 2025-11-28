@@ -91,6 +91,7 @@ jobs:
         with:
           api-key: ${{ secrets.BC_API_KEY }}
           soft_fail: true
+          quiet: true
       
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
